@@ -1,7 +1,7 @@
 name: Deploy Al-Noor Rabbani Complete Enterprise Platform
 
 on:
-  workflow_dispatch: # تشغيل فوري وشامل بضغطة زر واحدة
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,17 +11,18 @@ jobs:
   generate-clean-architecture:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Empty Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # جلب كامل سجل التتبع لمنع أخطاء التعارض
 
       - name: Auto-Generate Whole Monorepo Architecture
         run: |
           python3 -c "
           import os
 
-          # 1. تأسيس شجرة المجلدات الشاملة للمستودع الموحد (Monorepo)
+          # 1. تأسيس شجرة المجلدات الشاملة للمستودع الموحد
           folders = [
               'database',
               'apps/api/src/common/services',
@@ -35,7 +36,7 @@ jobs:
           for f in folders:
               os.makedirs(f, exist_ok=True)
 
-          # 2. ضخ أكواد الإنتاج الحقيقية المنسقة والمطهرة تماماً مـن الـمـسـافـات
+          # 2. ضخ أكواد الإنتاج الحقيقية المنسقة
           files = {}
 
           # [A] ملف قاعدة البيانات المعياري الشامل (PostgreSQL Schema)
@@ -119,7 +120,7 @@ jobs:
 
           # [C] ملفات تطبيق الهواتف الذكية بالكامل (Flutter Clean UI Engine)
           files['apps/mobile/lib/main.dart'] = (
-              'import 'package:flutter/material.dart';\n'
+              'import \'package:flutter/material.dart\';\n'
               'import \'core/theme/emerald_theme.dart\';\n'
               'import \'features/cases/presentation/screens/cases_screen.dart\';\n'
               'void main() => runApp(const AlNoorApp());\n'
@@ -164,21 +165,24 @@ jobs:
 
           # [D] بيئة التشغيل والتوثيق (Docker & README)
           files['docker/docker-compose.yml'] = 'version: \'3.8\'\nservices:\n  api:\n    build: .\n    ports: [\"3000:3000\"]'
-          files['README.md'] = '# منصة النور الرباني المتكاملة\n\nتم إنتاج وهندسة المنصة بالكامل بنظام مصفوفات برمجية نظيفة وخالية من المسافات الهامشية المشوهة.'
+          files['README.md'] = '# منصة النور الرباني المتكاملة\n\nتم إنتاج وهندسة المنصة بالكامل بنظام مصفوفات برمجية نظيفة وخالية مـن أخطاء التتبع.'
 
-          # تنفيذ الكتابة الفيزيائية النظيفة والمطهرة لكافة الملفات
+          # تنفيذ الكتابة الفيزيائية
           for path, content in files.items():
               with open(path, 'w', encoding='utf-8') as f:
                   f.write(content.strip())
           "
 
-      - name: Push All Files Synchronously to GitHub Repository
+      - name: Force Push All Files to GitHub Repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "Al-Noor Master Bot"
           git config --global user.email "master-engine@alnoor.platform"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@://github.com{{ github.repository }}.git
+          
+          # إنشاء وتأكيد فرع main محلياً وضخ البيانات بالقوة لتصفير المستودع الفارغ وإطلاقه
+          git checkout -b main || git switch main
           git add .
-          git commit -m "production: deploy entire platform with perfectly formatted source codes" || exit 0
-          git push origin HEAD:main
+          git commit -m "production: force deploy complete clean architecture stack" || exit 0
+          git push origin main --force
